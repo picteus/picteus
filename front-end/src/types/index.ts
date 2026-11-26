@@ -467,3 +467,16 @@ export const ManualSection =
     Settings: "Settings",
     Commands: "Commands"
   } as const;
+
+export type ActionCenterUsageEntryType =
+  {
+    readonly score: number;
+    readonly count: number;
+    readonly lastUsedAt: number;
+  };
+
+export type ActionCenterUsageDataType =
+  {
+    readonly entries: Record<string, ActionCenterUsageEntryType>;
+    readonly queryBoosts: Record<string, string>;
+  };

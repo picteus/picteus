@@ -8,7 +8,8 @@ import {
   IconPhoto,
   IconPhotoMinus,
   IconSettings,
-  IconStack2
+  IconStack2,
+  IconTerminal2
 } from "@tabler/icons-react";
 
 
@@ -18,6 +19,8 @@ export const EntityIcons = {
   repositories: IconFolders,
   collection: IconLibrary,
   collections: IconBooks,
+  command: IconTerminal2,
+  commands: IconTerminal2,
   extension: IconBox,
   extensions: IconBox,
   desk: IconStack2,

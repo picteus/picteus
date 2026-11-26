@@ -63,28 +63,23 @@ export default {
   actionsCenter: {
     searchOrJump: "Jump to or run an action…",
     placeholder: "Jump to, search images, run a command…",
-    imageTab: "Image",
-    routes: {
-      explorer: "Explorer",
-      desk: "Desk",
-      repositories: "Repositories",
-      collections: "Collections",
-      extensions: "Extensions",
-      activity: "Activity",
-      settings: "Settings"
-    },
     sections: {
-      jumpTo: "JUMP TO",
-      extensions: "EXTENSIONS",
-      commands: "COMMANDS",
-      quickToggles: "QUICK TOGGLES",
-      recentImages: "RECENT IMAGES"
+      frequent: "Frequent",
+      jumpTo: "Jump to",
+      quickToggles: "Quick toggles",
+      recentImages: "Recent images"
+    },
+    scopes: {
+      quickToggles: "Toggles"
     },
     switchToLight: "Switch to light mode",
     switchToDark: "Switch to dark mode",
     noResults: "No results found",
     navigate: "navigate",
     select: "select",
+    section: "section",
+    showAllInSection: "Show all {{count}} in {{section}}…",
+    resetRanking: "Reset usage ranking",
     resultsCount_zero: "0 results",
     resultsCount_one: "1 result",
     resultsCount_other: "{{count}} results"
@@ -143,6 +138,7 @@ export default {
     minimum: "Minimum",
     from: "From",
     to: "To",
+    all: "All",
     any: "Any",
     format: "Format",
     formats: "Formats",
@@ -157,6 +153,7 @@ export default {
     message: "Message",
     version: "Version",
     extension: "Extension",
+    extensions: "Extensions",
     collections: "Collections",
     categories: "Categories",
     imageCount: "Image count",

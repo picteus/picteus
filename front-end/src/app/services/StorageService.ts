@@ -1,6 +1,7 @@
 import { ManifestCapabilityId, SearchFilter } from "@picteus/ws-client";
 
 import {
+  ActionCenterUsageDataType,
   DeskTabType,
   ExtensionsViewSettingsType,
   FolderTypes,
@@ -13,6 +14,7 @@ export const prefix = "picteus_";
 
 export const StorageKeys =
   {
+    ACTIONS_CENTER_USAGE: "actionsCenterUsage",
     ACTIVITY_LOGS_BATCH_SIZE: "activityLogsBatchSize",
     AUTO_RELOAD_IMAGES_VIEWS: "autoReloadImagesViews",
     CLOSEST_IMAGES_EMBEDDING_NAME: "closestImagesEmbeddingName",
@@ -461,6 +463,43 @@ function setImageDeleteShouldDeleteFile(shouldDeleteFile: boolean): void
   setBoolean(StorageKeys.IMAGE_DELETE_SHOULD_DELETE_FILE, shouldDeleteFile);
 }
 
+const EMPTY_ACTIONS_CENTER_USAGE: ActionCenterUsageDataType =
+  {
+    entries: {},
+    queryBoosts: {}
+  };
+
+function getActionsCenterUsage(): ActionCenterUsageDataType
+{
+  const stored = getJson<Partial<ActionCenterUsageDataType>>(StorageKeys.ACTIONS_CENTER_USAGE);
+  if (stored === undefined || stored === null || typeof stored !== "object")
+  {
+    return EMPTY_ACTIONS_CENTER_USAGE;
+  }
+
+  return {
+    entries: stored.entries !== undefined && stored.entries !== null && typeof stored.entries === "object" ? stored.entries : {},
+    queryBoosts: stored.queryBoosts !== undefined && stored.queryBoosts !== null && typeof stored.queryBoosts === "object" ? stored.queryBoosts : {}
+  };
+}
+
+function setActionsCenterUsage(usage: ActionCenterUsageDataType): void
+{
+  try
+  {
+    setJson(StorageKeys.ACTIONS_CENTER_USAGE, usage);
+  }
+  catch
+  {
+    // Ignores storage quota errors so action execution is never blocked.
+  }
+}
+
+function clearActionsCenterUsage(): void
+{
+  remove(StorageKeys.ACTIONS_CENTER_USAGE);
+}
+
 export default {
   COLOR_SCHEME: `${prefix}${StorageKeys.COLOR_SCHEME}`,
   upgrade,
@@ -515,5 +554,8 @@ export default {
   getRecentImageIds,
   addRecentImageId,
   getImageDeleteShouldDeleteFile,
-  setImageDeleteShouldDeleteFile
+  setImageDeleteShouldDeleteFile,
+  getActionsCenterUsage,
+  setActionsCenterUsage,
+  clearActionsCenterUsage
 };

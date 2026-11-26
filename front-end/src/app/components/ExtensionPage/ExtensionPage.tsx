@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useMemo, useState } from "react";
 import { Badge, Box, Divider, Flex, Group, Tabs } from "@mantine/core";
-import { IconAdjustmentsHorizontal, IconInfoCircle, IconSparkles, IconTerminal2 } from "@tabler/icons-react";
+import { IconAdjustmentsHorizontal, IconInfoCircle, IconSparkles } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import { Extension, ExtensionState, Manifest, MarketplaceExtension } from "@picteus/ws-client";
@@ -25,6 +25,7 @@ import {
   ExtensionsService,
   UnifiedExtensionItemType
 } from "app/services";
+import { EntityIcons } from "../AppIcons/AppIcons.ts";
 import CommandIcon from "../CommandIcon/CommandIcon.tsx";
 import Common from "../Common/Common.ts";
 import FlexScrollArea from "../FlexScrollArea/FlexScrollArea.tsx";
@@ -325,7 +326,7 @@ export default function ExtensionPage({
           {showCommandsTab === true && (
             <Tabs.Tab
               value="commands"
-              leftSection={<IconTerminal2 size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
+              leftSection={<EntityIcons.commands size={Common.IconXSmallSize} stroke={Common.IconStrokeSize}/>}
             >
               <Group gap={6} align="center">
                 <span>{t("field.commands")}</span>
