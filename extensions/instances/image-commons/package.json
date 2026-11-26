@@ -1,6 +1,6 @@
 {
   "name": "@picteus/image-commons",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "productName": "Image Commons",
   "description": "Proposes common operations on images.",
   "keywords": [
@@ -47,6 +47,6 @@
     "@types/node": "22.17.1"
   },
   "dependencies": {
-    "@picteus/internal-extension-sdk": "0.21.0"
+    "@picteus/internal-extension-sdk": "0.22.0"
   }
 }

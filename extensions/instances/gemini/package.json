@@ -1,6 +1,6 @@
 {
   "name": "@picteus/gemini",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "productName": "Google Gemini",
   "description": "Accesses to all sorts of Google Gemini image-related features.",
   "keywords": [
@@ -53,6 +53,6 @@
   "dependencies": {
     "@google/genai": "1.25.0",
     "adm-zip": "0.6.1",
-    "@picteus/internal-extension-sdk": "0.21.0"
+    "@picteus/internal-extension-sdk": "0.22.0"
   }
 }

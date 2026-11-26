@@ -1,6 +1,6 @@
 {
   "name": "@picteus/civitai",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "productName": "Picteus Civitai extension",
   "description": "Interacts with Civitai.com images.",
   "keywords": [
@@ -44,6 +44,6 @@
     "tsx": "4.23.13"
   },
   "dependencies": {
-    "@picteus/internal-extension-sdk": "0.21.0"
+    "@picteus/internal-extension-sdk": "0.22.0"
   }
 }

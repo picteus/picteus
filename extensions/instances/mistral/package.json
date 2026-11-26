@@ -1,6 +1,6 @@
 {
   "name": "@picteus/mistral",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "productName": "Picteus Mistral extension",
   "description": "Integrates Mistral into Picteus.",
   "keywords": [
@@ -46,6 +46,6 @@
   },
   "dependencies": {
     "@mistralai/mistralai": "3.1.0",
-    "@picteus/internal-extension-sdk": "0.21.0"
+    "@picteus/internal-extension-sdk": "0.22.0"
   }
 }

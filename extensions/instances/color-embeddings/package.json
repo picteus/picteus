@@ -1,6 +1,6 @@
 {
   "name": "@picteus/color-embeddings",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "productName": "Picteus Color Embeddings",
   "description": "Computes embedding of the image dominant colors.",
   "keywords": [
@@ -46,7 +46,7 @@
     "tsx": "4.23.8"
   },
   "dependencies": {
-    "@picteus/internal-extension-sdk": "0.21.0",
+    "@picteus/internal-extension-sdk": "0.22.0",
     "colorthief": "3.5.0",
     "sharp": "0.35.3"
   }

@@ -1,6 +1,6 @@
 {
   "name": "@picteus/mcp-server",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "productName": "Picteus MCP Server",
   "description": "Exposes a MCP server over the Picteus API.",
   "keywords": [
@@ -56,6 +56,6 @@
     "axios": "1.21.0",
     "hono": "4.13.16",
     "@hono/node-server": "2.1.5",
-    "@picteus/internal-extension-sdk": "0.21.0"
+    "@picteus/internal-extension-sdk": "0.22.0"
   }
 }

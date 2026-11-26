@@ -1,7 +1,7 @@
 {
   "$schema": "https://picteus.github.io/picteus/jsonschema/manifest-v6.schema.json",
   "id": "gemini",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "name": "Google Gemini",
   "description": "Generate and modify images using Google Gemini AI, and compute image captions and eligible tags for enhanced image organization.",
   "categories": [

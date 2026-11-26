@@ -1,6 +1,6 @@
 {
   "name": "@picteus/midjourney",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "productName": "Midjourney",
   "description": "Accesses to all sorts of Midjourney features.",
   "keywords": [
@@ -52,6 +52,6 @@
   "dependencies": {
     "fast-xml-parser": "5.11.2",
     "adm-zip": "0.6.1",
-    "@picteus/internal-extension-sdk": "0.21.0"
+    "@picteus/internal-extension-sdk": "0.22.0"
   }
 }

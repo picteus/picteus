@@ -1,6 +1,6 @@
 {
   "name": "@picteus/anthropic",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "productName": "Picteus Anthropic extension",
   "description": "Integrates Claude into Picteus.",
   "keywords": [
@@ -46,6 +46,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",
-    "@picteus/internal-extension-sdk": "0.21.0"
+    "@picteus/internal-extension-sdk": "0.22.0"
   }
 }
