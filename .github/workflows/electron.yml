@@ -9,13 +9,13 @@ on:
         type: choice
         required: true
         options:
-          - '["windows-latest"]'
+          - '["windows-2025"]'
           - '["windows-11-arm"]'
           - '["macos-26"]'
           - '["macos-15-intel"]'
           - '["ubuntu-latest"]'
-          - '["windows-latest", "macos-26"]'
-        default: '["windows-latest", "macos-26"]'
+          - '["windows-2025", "macos-26"]'
+        default: '["windows-2025", "macos-26"]'
       deploy:
         description: 'Deploy?'
         type: boolean
