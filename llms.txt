@@ -120,7 +120,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Indicates the repositories activities](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-activities.md): Returns all the declared repositories activities.
 - [Creates a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-create.md): Declares a new repository.
 - [Deletes a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-delete.md): Deletes a repository along with all the images attached to it.
-- [Ensures a repository exists](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-ensure.md): Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.
+- [Ensures a repository attached to an extension exists](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-ensure.md): Ensures that a repository with type 'file' attached to the provided extension exists, and if not, creates it.
 - [Gets all the embeddings identifiers and names](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get-embeddings-names.md): Returns all the existing pairs of extension identifier and embedding name, restricted to the extensions with the 'image.embeddings' capability.
 - [Gets all the feature names](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get-feature-names.md): Returns the feature names of all images extensions.
 - [Gets an image from its URL](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-get-image-by-url.md): Returns the details about an image.
@@ -133,7 +133,6 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Creates an image in the repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-store-image.md): Declares an image in the repository and returns it.
 - [Synchronizes a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-synchronize.md): Synchronizes a repository against its back-end.
 - [Updates a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-update.md): Updates the name and comment of a repository.
-- [Starts or stops watching a repository](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/repository-watch.md): Starts or stops listening to the repository back-end images changes.
 - [AiModel](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/aimodel.md): An AI model declared by an extension
 - [AiModelModality](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/aimodelmodality.md): The task modalities the AI model is compatible with
 - [ApiSecret](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/apisecret.md): Detailed information about an API secret, including its secret and its scope
@@ -176,7 +175,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Image](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/image.md): Comprehensive information about an image, i.e. all the information about an image
 - [ImageDimensions](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagedimensions.md): The dimensions of an image
 - [ImageDistance](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagedistance.md): The vectorial distance with a reference image, or given an embedding
-- [ImageEmbedding](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imageembedding.md): A vectorial representation of an image, i.e. an image embedding vector, plus a name for that representation
+- [ImageEmbedding](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imageembedding.md): A vectorial representation of an image, i.e. an image embedding vector, plus an identifier for that representation
 - [ImageFeature](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagefeature.md): An image feature
 - [ImageFeatureFormat](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagefeatureformat.md): All the possible formats for an image feature.
 - [ImageFeatureNullValue](https://picteus.github.io/picteus/docs/manual/webservicesapi/reference/schemas/imagefeaturenullvalue.md): The value to pass to the image search web services to designate a 'non-null' feature value

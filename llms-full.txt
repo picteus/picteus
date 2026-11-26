@@ -3748,7 +3748,7 @@ The schema defines the following core entities:
 | `Settings` | Global application configuration parameters stored as typed key-value records. |
 | `ApiSecret` | Programmatic API access secrets, storing token hashes, expiration dates, comments, and security scopes. |
 | `ExtensionSettings` | Per-extension persistent user configuration JSON payloads and extension version tracking metadata. |
-| `Repository` | Physical image storage repositories, storing filesystem path URLs, technical identifiers, state, and modification dates. |
+| `Repository` | Physical image storage repositories, storing filesystem path URLs, extension associations, operating modes, availability, state, and modification dates. |
 | `Collection` | User-defined image collections, storing collection names, descriptions, and dynamic JSON search query filters. |
 | `Image` | Core image records, capturing file properties — width, height, byte size, format, URL, creation/modification timestamps —, repository relationships, and parent/child precedence links for transformed images. |
 | `ImageMetadata` | Raw and structured metadata extracted from image files, including EXIF, IPTC, XMP, ICC color profiles, and Photoshop TIFF tags. |
@@ -7464,9 +7464,9 @@ Deletes a repository along with all the images attached to it.
 
 ---
 
-## Ensures a repository exists
+## Ensures a repository attached to an extension exists
 
-Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.
+Ensures that a repository with type 'file' attached to the provided extension exists, and if not, creates it.
 
   Request
 
@@ -7720,26 +7720,6 @@ Updates the name and comment of a repository.
 
 <StatusCodes
   {...require("./repository-update.StatusCodes.json")}
->
-
----
-
-## Starts or stops watching a repository
-
-Starts or stops listening to the repository back-end images changes.
-
-  Request
-
-<ParamsDetails
-  {...require("./repository-watch.ParamsDetails.json")}
->
-
-<RequestSchema
-  {...require("./repository-watch.RequestSchema.json")}
->
-
-<StatusCodes
-  {...require("./repository-watch.StatusCodes.json")}
 >
 
 ---
@@ -8166,7 +8146,7 @@ The vectorial distance with a reference image, or given an embedding
 
 ## ImageEmbedding
 
-A vectorial representation of an image, i.e. an image embedding vector, plus a name for that representation
+A vectorial representation of an image, i.e. an image embedding vector, plus an identifier for that representation
 
 <Schema
   {...require("./imageembedding.Schema.json")}
@@ -8910,13 +8890,13 @@ Repository endpoints manage image storage locations, synchronization, monitoring
 |:---|:---|:---|
 | `GET` | `/repository/list` | Lists repositories. |
 | `POST` | `/repository/create` | Creates a repository. |
-| `PUT` | `/repository/ensure` | Creates a repository if it does not exist. |
+| `PUT` | `/repository/ensure` | Creates an extension-attached repository if it does not exist. |
 | `GET` | `/repository/{id}/get` | Gets a repository. |
 | `PUT` | `/repository/{id}/update` | Updates repository configuration. |
 | `PUT` | `/repository/{id}/renameImage` | Renames an image file. |
 | `POST` | `/repository/{id}/storeImage` | Stores an image in a repository. |
 | `PUT` | `/repository/{id}/synchronize` | Synchronizes a repository. |
-| `PUT` | `/repository/{id}/watch` | Starts or stops filesystem watching. |
+| `PUT` | `/repository/{id}/setMode` | Changes a repository's operating mode. |
 | `PUT` | `/repository/startOrStop` | Starts or stops repositories. |
 | `GET` | `/repository/activities` | Reports repository activities. |
 | `DELETE` | `/repository/{id}/delete` | Deletes a repository. |
@@ -8924,6 +8904,25 @@ Repository endpoints manage image storage locations, synchronization, monitoring
 | `GET` | `/repository/tags` | Lists repository tags. |
 | `GET` | `/repository/featureNames` | Lists repository feature names. |
 | `GET` | `/repository/embeddingsNames` | Lists repository embedding names. |
+
+### Repository modes
+
+A repository has one of three operating modes:
+
+| Mode | Behavior |
+|:---|:---|
+| `disabled` | The repository is excluded from search and capability processing. |
+| `enabled` | The repository is available and is synchronized once when its configuration is applied. |
+| `watching` | The repository is available and its file location is monitored for ongoing changes. |
+
+Use `PUT /repository/{id}/setMode` to change the mode. Switching to `disabled` stops repository operations; switching
+to `enabled` or `watching` starts synchronization. The `watching` mode is supported for file repositories.
+
+### Extension-attached repositories
+
+Extensions can create or retrieve a dedicated repository with `PUT /repository/ensure`. The request identifies the
+extension with `extensionId`, and the repository stores that association. Repository names and comments remain user-
+visible configuration fields. The location type is `file`, and the operating mode is selected explicitly with `mode`.
 
 The OpenAPI specification is authoritative for parameters, payloads, permissions, and response schemas. See [Images](images.md) for image-level enrichment endpoints.
 

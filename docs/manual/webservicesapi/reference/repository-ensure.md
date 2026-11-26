@@ -1,6 +1,6 @@
-# Ensures a repository exists
+# Ensures a repository attached to an extension exists
 
-> Ensures that a repository with type 'file' and with the provided identifier exists, and if not, creates it.
+> Ensures that a repository with type 'file' attached to the provided extension exists, and if not, creates it.
 
 Request
 

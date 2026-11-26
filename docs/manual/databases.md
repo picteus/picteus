@@ -35,7 +35,7 @@ The schema defines the following core entities:
 | `Settings` | Global application configuration parameters stored as typed key-value records. |
 | `ApiSecret` | Programmatic API access secrets, storing token hashes, expiration dates, comments, and security scopes. |
 | `ExtensionSettings` | Per-extension persistent user configuration JSON payloads and extension version tracking metadata. |
-| `Repository` | Physical image storage repositories, storing filesystem path URLs, technical identifiers, state, and modification dates. |
+| `Repository` | Physical image storage repositories, storing filesystem path URLs, extension associations, operating modes, availability, state, and modification dates. |
 | `Collection` | User-defined image collections, storing collection names, descriptions, and dynamic JSON search query filters. |
 | `Image` | Core image records, capturing file properties — width, height, byte size, format, URL, creation/modification timestamps —, repository relationships, and parent/child precedence links for transformed images. |
 | `ImageMetadata` | Raw and structured metadata extracted from image files, including EXIF, IPTC, XMP, ICC color profiles, and Photoshop TIFF tags. |
