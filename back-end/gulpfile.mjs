@@ -105,6 +105,17 @@ const copyBackendPackageJson = () =>
   return copyPackageJson(backendDirectoryPath, buildBackendDirectoryPath);
 };
 
+const omitPrismaCli = async () =>
+{
+  const packageJsonFilePath = path.join(buildBackendDirectoryPath, packageJsonFileName);
+  const packageJson = JSON.parse(await fs.promises.readFile(packageJsonFilePath, "utf8"));
+  // We omit the Prisma CLI because npm retains it as an optional peer of @prisma/client even with --omit=dev.
+  delete packageJson.devDependencies?.prisma;
+  await fs.promises.writeFile(packageJsonFilePath, JSON.stringify(packageJson, undefined, 2) + "\n");
+};
+
+const stageBackendPackageJson = gulp.series(copyBackendPackageJson, omitPrismaCli);
+
 const npmInstallOptions = `--include=optional --os=${process.env["OPERATING_SYSTEM"] ?? process.platform} --cpu=${process.env["ARCHICTURE"] ?? process.arch}`;
 
 const installNpmPackages = (directoryPath) =>
@@ -308,7 +319,7 @@ const cleanPackageJson = () =>
 export const installNodeModulesForDockerfile = gulp.series(
   cleanDirectory(buildTargetDirectoryPath),
   cleanNodeModules,
-  copyBackendPackageJson,
+  stageBackendPackageJson,
   installBackend,
   pruneNodeModulesForProduction,
   cleanPackageJson
@@ -320,7 +331,7 @@ const pruneElectronDuplicates = gulp.series(existingChain, newChain, removeDupli
 export const installNodeModulesForElectron = gulp.series(
   cleanDirectory(buildTargetDirectoryPath),
   cleanNodeModules,
-  copyBackendPackageJson,
+  stageBackendPackageJson,
   installBackend,
   copyElectronPackageJson,
   installElectron,

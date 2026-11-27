@@ -2,7 +2,7 @@
 import path from "node:path";
 import fs from "node:fs";
 
-import { sync } from "glob";
+import {sync} from "glob";
 
 
 const postPackage = (context) =>
@@ -15,9 +15,16 @@ const postPackage = (context) =>
   switch (platformName)
   {
     case "mac":
-      workingDirectory = path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources`);
+    {
+      const frameworkDirectoryPath = path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app/Contents/Frameworks/Electron Framework.framework/Versions/A`);
+      for (const swiftShaderFileName of [ "libvk_swiftshader.dylib", "vk_swiftshader_icd.json" ])
+      {
+        fs.rmSync(path.join(frameworkDirectoryPath, "Libraries", swiftShaderFileName), { force: true });
+      }
+      workingDirectory = path.join(frameworkDirectoryPath, "Resources");
       fileExtension = "lproj";
       break;
+    }
     case "windows":
       workingDirectory = path.join(context.appOutDir, "locales");
       fileExtension = "pak";
