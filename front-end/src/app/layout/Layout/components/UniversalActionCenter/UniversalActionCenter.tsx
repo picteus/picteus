@@ -768,6 +768,7 @@ export default function UniversalActionCenter(): ReactElement
         content: style.content,
         body: style.body,
         actionsList: style.actionsList,
+        action: style.action,
         actionBody: style.actionBody,
         actionLabel: style.actionLabel,
         actionDescription: style.actionDescription,
