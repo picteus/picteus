@@ -390,13 +390,17 @@ class TypeScriptExtension extends PicteusExtension
               },
             projectTags:
               {
-                type: "string",
+                type: "array",
                 title: "Project tags",
                 description: "Tags associated with the generated assets.",
-                default: theme.tag,
+                items:
+                  {
+                    type: "string",
+                  },
+                uniqueItems: true,
                 ui:
                   {
-                    widget: "tags"
+                    widget: "tag"
                   }
               },
             exportDirectory:

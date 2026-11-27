@@ -6,7 +6,7 @@ import ImagePickerField from "../../ImagePickerField/ImagePickerField.tsx";
 
 
 type ImagePickerWidgetPropsType = WidgetProps & {
-  readonly selectionMode: ImagePickerSelectionModeType;
+  readonly selectionMode?: ImagePickerSelectionModeType;
 };
 
 export function ImagePickerWidget(props: ImagePickerWidgetPropsType): ReactElement
@@ -23,8 +23,10 @@ export function ImagePickerWidget(props: ImagePickerWidgetPropsType): ReactEleme
     schema,
     label,
     hideLabel,
-    selectionMode
+    selectionMode: explicitSelectionMode
   } = props;
+
+  const selectionMode: ImagePickerSelectionModeType = explicitSelectionMode || (schema.type === "array" || Array.isArray(value) ? "multiple" : "single");
 
   const selectedIds = useMemo<string[]>(() =>
   {
@@ -63,14 +65,4 @@ export function ImagePickerWidget(props: ImagePickerWidgetPropsType): ReactEleme
       onFocus={id && onFocus ? () => onFocus(id, value) : undefined}
     />
   );
-}
-
-export function SingleImagePickerWidget(props: WidgetProps): ReactElement
-{
-  return <ImagePickerWidget {...props} selectionMode="single"/>;
-}
-
-export function MultipleImagesPickerWidget(props: WidgetProps): ReactElement
-{
-  return <ImagePickerWidget {...props} selectionMode="multiple"/>;
 }

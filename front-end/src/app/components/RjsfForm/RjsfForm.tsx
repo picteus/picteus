@@ -13,12 +13,12 @@ import "@mantine/dropzone/styles.css";
 import { JsonType } from "types";
 import RepositoryWidget from "./widgets/RepositoryWidget.tsx";
 import CollectionWidget from "./widgets/CollectionWidget.tsx";
-import TagsWidget from "./widgets/TagsWidget.tsx";
+import TagWidget from "./widgets/TagWidget.tsx";
 import FilePickerWidget from "./widgets/FilePickerWidget.tsx";
 import DirectoryPickerWidget from "./widgets/DirectoryPickerWidget.tsx";
 import RangeWidget from "./widgets/RangeWidget.tsx";
 import SelectWidget from "./widgets/SelectWidget.tsx";
-import { MultipleImagesPickerWidget, SingleImagePickerWidget } from "./widgets/ImagePickerWidget.tsx";
+import { ImagePickerWidget } from "./widgets/ImagePickerWidget.tsx";
 
 
 type RsfjFormType = {
@@ -361,17 +361,12 @@ export default function RjsfForm({
     {
       repository: RepositoryWidget,
       collection: CollectionWidget,
-      tags: TagsWidget,
-      image: SingleImagePickerWidget,
-      images: MultipleImagesPickerWidget,
+      tag: TagWidget,
+      image: ImagePickerWidget,
       file: FilePickerWidget,
-      filePicker: FilePickerWidget,
       directory: DirectoryPickerWidget,
-      directoryPicker: DirectoryPickerWidget,
       range: RangeWidget,
-      RangeWidget,
-      Select: SelectWidget,
-      SelectWidget
+      Select: SelectWidget
     };
 
   return (

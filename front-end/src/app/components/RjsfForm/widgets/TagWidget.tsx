@@ -9,7 +9,7 @@ import { useExtensions, useTags } from "app/hooks";
 import { ExtensionIcon } from "app/components";
 
 
-export default function TagsWidget(props: WidgetProps)
+export default function TagWidget(props: WidgetProps)
 {
   const [ t ] = useTranslation();
   const { id, value, required, disabled, readonly, onChange, onBlur, onFocus, schema } = props;

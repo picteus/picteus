@@ -371,9 +371,12 @@ type Runnable = () => Promise<void>;
 
 export type CapabilityResult<T> = { extensionId: string, value: T };
 
-type UIProperty = { property: string, ui: Record<string, any> };
-
-const uiPropertyName = "ui";
+export type UIProperty =
+  {
+    property: string;
+    ui: Record<string, any>;
+    propertySchema?: Record<string, any>;
+  };
 
 type WithAiModel = { aiModel: AiModel };
 
@@ -445,23 +448,114 @@ export class StateChangeOptions
 
 }
 
+export const perWidgetSupportedTypes: Record<string, string[]> =
+  {
+    // Picteus entity pickers
+    image: [ "string", "array" ],
+    collection: [ "number", "array" ],
+    repository: [ "string", "array" ],
+    tag: [ "string", "array" ],
+
+    // Picteus custom pickers
+    directory: [ "string" ],
+    file: [ "string" ],
+
+    // Standard & theme widgets
+    radio: [ "string", "number", "integer", "boolean" ],
+    checkboxes: [ "array" ],
+    checkbox: [ "boolean" ],
+    range: [ "integer", "number" ],
+    updown: [ "integer", "number" ],
+    rating: [ "integer", "number" ],
+    textarea: [ "string" ],
+    password: [ "string" ],
+    color: [ "string" ],
+    select: [ "string", "number", "integer", "boolean", "array" ],
+    date: [ "string" ],
+    "alt-date": [ "string" ],
+    "date-time": [ "string" ],
+    datetime: [ "string" ],
+    "alt-datetime": [ "string" ],
+    hidden: [ "string", "number", "integer", "boolean", "array", "object" ]
+  };
+
+const uiPropertyName = "ui";
+
 export function stripAndExtractParametersUiProperties(parameters: Record<string, any>): UIProperty[]
 {
-  const uis: UIProperty [] = [];
-  const properties = parameters.properties;
-  if (properties !== undefined)
+  const uis: UIProperty[] = [];
+  if (parameters === null || typeof parameters !== "object")
   {
-    for (const property in properties)
+    return uis;
+  }
+
+  function traverse(schemaNode: unknown, pathPrefix: string): void
+  {
+    if (schemaNode === null || typeof schemaNode !== "object" || Array.isArray(schemaNode) === true)
     {
-      const childProperty = properties[property];
-      const ui: Record<string, any> = childProperty[uiPropertyName];
-      delete childProperty[uiPropertyName];
+      return;
+    }
+
+    const node = schemaNode as Record<string, any>;
+
+    if (pathPrefix.length > 0 && uiPropertyName in node)
+    {
+      const ui = node[uiPropertyName];
+      delete node[uiPropertyName];
       if (ui !== undefined)
       {
-        uis.push({ property, ui });
+        uis.push({ property: pathPrefix, ui, propertySchema: node });
+      }
+    }
+
+    if (node.properties !== null && typeof node.properties === "object" && Array.isArray(node.properties) === false)
+    {
+      for (const propertyName of Object.keys(node.properties))
+      {
+        const currentPath = pathPrefix.length > 0 ? `${pathPrefix}.${propertyName}` : propertyName;
+        traverse(node.properties[propertyName], currentPath);
+      }
+    }
+
+    if (node.items !== null && typeof node.items === "object")
+    {
+      if (Array.isArray(node.items) === true)
+      {
+        for (let index = 0; index < node.items.length; index++)
+        {
+          traverse(node.items[index], `${pathPrefix}[${index}]`);
+        }
+      }
+      else if (Array.isArray(node.items) === false)
+      {
+        traverse(node.items, `${pathPrefix}.items`);
+      }
+    }
+
+    for (const unionKey of [ "allOf", "anyOf", "oneOf" ])
+    {
+      if (Array.isArray(node[unionKey]) === true)
+      {
+        for (let index = 0; index < node[unionKey].length; index++)
+        {
+          traverse(node[unionKey][index], `${pathPrefix}.${unionKey}[${index}]`);
+        }
+      }
+    }
+
+    for (const defsKey of [ "definitions", "$defs" ])
+    {
+      if (node[defsKey] !== null && typeof node[defsKey] === "object" && Array.isArray(node[defsKey]) === false)
+      {
+        for (const defName of Object.keys(node[defsKey]))
+        {
+          traverse(node[defsKey][defName], `${pathPrefix}.${defsKey}.${defName}`);
+        }
       }
     }
   }
+
+  traverse(parameters, "");
   return uis;
 }
 
@@ -470,16 +564,54 @@ export function checkUiProperties(uiProperties: UIProperty[]): void
   for (const uiProperty of uiProperties)
   {
     const ui = uiProperty.ui;
+    if (ui === null || typeof ui !== "object" || Array.isArray(ui) === true)
+    {
+      parametersChecker.throwBadParameter(`ui on '${uiProperty.property}'`, ui, "it must be an object");
+    }
     for (const property in ui)
     {
       switch (property)
       {
         case "widget":
+        {
+          const widget = ui.widget;
+          if (typeof widget !== "string")
+          {
+            parametersChecker.throwBadParameter(`${uiPropertyName}.widget on '${uiProperty.property}'`, widget, "it must be a string");
+          }
+          const supportedTypes = perWidgetSupportedTypes[widget];
+          if (supportedTypes === undefined)
+          {
+            parametersChecker.throwBadParameter(`${uiPropertyName}.widget on '${uiProperty.property}'`, widget, `the widget '${widget}' is not supported`);
+          }
+          const propertySchema = uiProperty.propertySchema;
+          if (propertySchema !== undefined && propertySchema.type !== undefined)
+          {
+            const rawType = propertySchema.type;
+            const normalizedTypes = (Array.isArray(rawType) ? rawType : [ rawType ]).filter((aType: string) => aType !== "null").map((aType: string) => (aType === "float" || aType === "double") ? "number" : aType);
+            const isCompatible = normalizedTypes.some((aType: string) => supportedTypes.includes(aType) || (aType === "integer" && supportedTypes.includes("number")));
+            if (normalizedTypes.length > 0 && isCompatible === false)
+            {
+              parametersChecker.throwBadParameter(
+                `${uiPropertyName}.widget on '${uiProperty.property}'`,
+                widget,
+                `the widget '${widget}' is not compatible with property type '${rawType}'. Expected type(s): [${supportedTypes.join(", ")}]`
+              );
+            }
+          }
           break;
+        }
         case "inline":
+        {
+          const inline = ui.inline;
+          if (typeof inline !== "boolean")
+          {
+            parametersChecker.throwBadParameter(`${uiPropertyName}.inline on '${uiProperty.property}'`, inline, "it must be a boolean");
+          }
           break;
+        }
         default:
-          parametersChecker.throwBadParameter("ui", property, "this property is not supported");
+          parametersChecker.throwBadParameter(uiPropertyName, property, "this property is not supported");
       }
     }
   }
@@ -2018,7 +2150,6 @@ export class ExtensionService
               {
                 parametersChecker.throwBadParameterError(`The command of the extension with id '${manifest.id}', with '${command.id}' on entity '${command.on.entity}' is missing the ['${requiredEvents.join("', '")}'] events`);
               }
-              // TODO: check the "ui" property of each command parameter
             }
           }
         }
@@ -2029,18 +2160,24 @@ export class ExtensionService
       }
       else
       {
-        const withStrippedUiPropertiesParameters = deepCopy(manifest.settings);
-        stripAndExtractParametersUiProperties(withStrippedUiPropertiesParameters);
-        // We check that the manifest settings are valid
         const ajv = computeAjv();
-        try
+        const checkParameters = (parameters: Record<string, any>, contextDescription: string): void =>
         {
-          validateJsonSchema(ajv, withStrippedUiPropertiesParameters);
-        }
-        catch (error)
-        {
-          parametersChecker.throwBadParameterError(`The settings of the extension with id '${manifest.id}' do not respect the JSON schema. Reason: '${(error as Error).message}'`);
-        }
+          const withStrippedUiPropertiesParameters = deepCopy(parameters);
+          const uiProperties = stripAndExtractParametersUiProperties(withStrippedUiPropertiesParameters);
+          try
+          {
+            validateJsonSchema(ajv, withStrippedUiPropertiesParameters);
+            checkUiProperties(uiProperties);
+          }
+          catch (error)
+          {
+            parametersChecker.throwBadParameterError(`${contextDescription}. Reason: '${(error as Error).message}'`);
+          }
+        };
+
+        // We check that the manifest settings are valid
+        checkParameters(manifest.settings, `The settings of the extension with id '${manifest.id}' do not respect the JSON schema`);
 
         // We check that the manifest command parameters are valid
         for (const instructions of manifest.instructions)
@@ -2051,16 +2188,7 @@ export class ExtensionService
             {
               if (command.parameters !== undefined)
               {
-                const withStrippedUiPropertiesParameters = deepCopy(command.parameters);
-                stripAndExtractParametersUiProperties(withStrippedUiPropertiesParameters);
-                try
-                {
-                  validateJsonSchema(ajv, withStrippedUiPropertiesParameters);
-                }
-                catch (error)
-                {
-                  parametersChecker.throwBadParameterError(`The command of the extension with id '${manifest.id}', with id '${command.id}' contains parameters which present a definition that does not respect the JSON schema. Reason: '${(error as Error).message}'`);
-                }
+                checkParameters(command.parameters, `The command of the extension with id '${manifest.id}', with id '${command.id}' contains parameters which present a definition that does not respect the JSON schema`);
               }
             }
           }

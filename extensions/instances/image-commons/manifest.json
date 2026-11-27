@@ -179,7 +179,7 @@
                   "description": "The tag to include."
                 },
                 "ui": {
-                  "widget": "tags"
+                  "widget": "tag"
                 }
               }
             },

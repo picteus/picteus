@@ -229,11 +229,11 @@
                 },
                 "default": [],
                 "ui": {
-                  "widget": "images"
+                  "widget": "image"
                 }
               },
               "sourceCollectionId": {
-                "type": "string",
+                "type": "number",
                 "title": "Source collection",
                 "description": "Which collection would you like to use as a source?",
                 "ui": {

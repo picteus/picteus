@@ -58,6 +58,11 @@ import {
 import { ensureDirectory, fixUtimesSync, getTemporaryDirectoryPath, move } from "../src/services/utils/downloader";
 import { environmentVariableChecker, parametersChecker, StringNature } from "../src/services/utils/parametersChecker";
 import { computeAjv, validateJsonSchema, validateSchema } from "../src/services/utils/ajvWrapper";
+import {
+  checkUiProperties,
+  stripAndExtractParametersUiProperties,
+  UIProperty
+} from "../src/services/extensionServices";
 import { DeepObjectPipeTransform } from "../src/controllers/app.pipes";
 import { WatcherEvent, watchPath } from "../src/services/utils/pathWatcher";
 import {
@@ -2059,6 +2064,164 @@ describe("Miscellaneous via application", () =>
       const response = await fetch(url, { headers: { Origin: origin } });
       expect(response.headers.get("access-control-allow-origin")).toEqual(origin);
     }
+  });
+
+  test("ui.widget", (): void =>
+  {
+    // We verify that a nested schema with UI properties is properly extracted and stripped
+    const schema =
+      {
+        type: "object",
+        properties:
+          {
+            imageUrl:
+              {
+                type: "string",
+                ui: { widget: "image" }
+              },
+            selectedImages:
+              {
+                type: "array",
+                items:
+                  {
+                    type: "string",
+                    ui: { widget: "image" }
+                  },
+                ui: { widget: "image", inline: true }
+              },
+            profile:
+              {
+                type: "object",
+                properties:
+                  {
+                    age:
+                      {
+                        type: "integer",
+                        ui: { widget: "range" }
+                      },
+                    bio:
+                      {
+                        type: "string",
+                        ui: { widget: "textarea" }
+                      }
+                  }
+              }
+          }
+      };
+
+    const extractedUiProperties = stripAndExtractParametersUiProperties(schema);
+
+    // We verify extraction count and property paths
+    expect(extractedUiProperties).toHaveLength(5);
+    const propertyPaths = extractedUiProperties.map(extractedUiProperty => extractedUiProperty.property);
+    expect(propertyPaths).toEqual([
+      "imageUrl",
+      "selectedImages",
+      "selectedImages.items",
+      "profile.age",
+      "profile.bio"
+    ]);
+
+    // We verify that UI properties are stripped from the schema
+    const propertySchemasToCheck: Record<string, unknown>[] = [
+      schema.properties.imageUrl,
+      schema.properties.selectedImages,
+      schema.properties.selectedImages.items,
+      schema.properties.profile.properties.age,
+      schema.properties.profile.properties.bio
+    ];
+    for (const propertySchema of propertySchemasToCheck)
+    {
+      expect(propertySchema.ui).toBeUndefined();
+    }
+
+    // We assess that valid extracted UI properties pass validation
+    expect(() => checkUiProperties(extractedUiProperties)).not.toThrow();
+
+    const expectInvalidUiProperty = (uiProperty: UIProperty, expectedErrorMessage: string): void =>
+    {
+      expect(() => checkUiProperties([ uiProperty ])).toThrow(expectedErrorMessage);
+    };
+
+    // We assess that a non-object UI definition is rejected
+    expectInvalidUiProperty(
+      { property: "foo", ui: "not-an-object" as unknown as Record<string, unknown> },
+      "The parameter 'ui on 'foo'' with value 'not-an-object' is invalid"
+    );
+
+    // We assess that an unsupported property in a UI definition is rejected
+    expectInvalidUiProperty(
+      { property: "foo", ui: { widget: "image", invalidProperty: true } },
+      "The parameter 'ui' with value 'invalidProperty' is invalid"
+    );
+
+    // We assess that empty, unknown, or deprecated widget names are rejected
+    expectInvalidUiProperty(
+      { property: "foo", ui: { widget: "" } },
+      "The parameter 'ui.widget on 'foo'' with value '' is invalid"
+    );
+    expectInvalidUiProperty(
+      { property: "foo", ui: { widget: "unknownWidget" } },
+      "The parameter 'ui.widget on 'foo'' with value 'unknownWidget' is invalid"
+    );
+    expectInvalidUiProperty(
+      { property: "foo", ui: { widget: "images" } },
+      "the widget 'images' is not supported"
+    );
+    expectInvalidUiProperty(
+      { property: "foo", ui: { widget: "tags" } },
+      "the widget 'tags' is not supported"
+    );
+
+    // We assess that widgets incompatible with property schema types are rejected
+    expectInvalidUiProperty(
+      {
+        property: "count",
+        ui: { widget: "image" },
+        propertySchema: { type: "integer" }
+      },
+      "the widget 'image' is not compatible with property type 'integer'"
+    );
+    expectInvalidUiProperty(
+      {
+        property: "rating",
+        ui: { widget: "rating" },
+        propertySchema: { type: "string" }
+      },
+      "the widget 'rating' is not compatible with property type 'string'"
+    );
+    expectInvalidUiProperty(
+      {
+        property: "score",
+        ui: { widget: "tag" },
+        propertySchema: { type: "integer" }
+      },
+      "the widget 'tag' is not compatible with property type 'integer'"
+    );
+
+    // We assess that a non-boolean inline option is rejected
+    expectInvalidUiProperty(
+      {
+        property: "flag",
+        ui: { widget: "checkbox", inline: "yes" as unknown as boolean },
+        propertySchema: { type: "boolean" }
+      },
+      "The parameter 'ui.inline on 'flag'' with value 'yes' is invalid"
+    );
+
+    // We assess that number and integer types are compatible with range and updown widgets
+    expect(() => checkUiProperties([
+      {
+        property: "amount",
+        ui: { widget: "range" },
+        propertySchema: { type: "number" }
+      },
+      {
+        property: "count",
+        ui: { widget: "updown" },
+        propertySchema: { type: "integer" }
+      }
+    ])).not.toThrow();
   });
 
 });
